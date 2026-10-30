@@ -11,7 +11,7 @@ import { SportsbookMenuModal } from './components/SportsbookMenuModal';
 import { DesktopLanding } from './components/DesktopLanding';
 import { DesktopSportsbookView } from './components/DesktopSportsbookView';
 import { FEATURED_MATCH, INITIAL_BET_HISTORY } from './data/mockData';
-import { syncBetToSupabase, syncUserBalanceToSupabase } from './services/supabaseClient';
+import { syncBetToSupabase, syncUserBalanceToSupabase, signOutUser } from './services/supabaseClient';
 import { checkBetSettlements } from './services/oddsApi';
 import confetti from 'canvas-confetti';
 
@@ -107,11 +107,17 @@ export function App() {
     showToast(`Welcome back, ${userData.name}! $${userData.balance.toLocaleString()} ready to bet.`);
   };
 
-  const handleSignOut = () => {
+  const handleSignOut = async () => {
+    try {
+      await signOutUser();
+    } catch (e) {
+      console.warn('Sign out:', e);
+    }
     setIsAuthenticated(false);
     setTransitionDirection('slide-left');
     setActiveMobileScreen('welcome');
     localStorage.removeItem('vertex_auth');
+    localStorage.removeItem('vertex_user');
     showToast('Signed out successfully.');
   };
 
@@ -340,12 +346,16 @@ export function App() {
                 onOpenNotifications={() => setIsNotifOpen(true)}
                 onOpenDeposit={() => setIsDepositOpen(true)}
                 onOpenMenu={() => setIsMenuOpen(true)}
+                onOpenMyBets={() => setIsMyBetsOpen(true)}
+                onSignOut={handleSignOut}
                 betslip={betslip}
                 onToggleOddSelection={handleToggleOddSelection}
                 activeTab={activeDockTab}
                 setActiveTab={(tab) => {
                   if (tab === 'home') setActiveMobileScreen('home');
+                  if (tab === 'mybets') setIsMyBetsOpen(true);
                   if (tab === 'betslip') setIsBetSlipOpen(true);
+                  if (tab === 'search') setIsSearchOpen(true);
                   if (tab === 'menu') setIsMenuOpen(true);
                   setActiveDockTab(tab);
                 }}

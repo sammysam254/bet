@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Bell, BarChart2, Star, ChevronDown, ChevronUp, Home, Disc, Ticket, Menu, Clock, Radio, Key, Sparkles, Filter } from 'lucide-react';
+import { Search, Bell, BarChart2, Star, ChevronDown, ChevronUp, Home, Disc, Ticket, Menu, Clock, Radio, Key, Sparkles, Filter, LogOut } from 'lucide-react';
 import { TeamLogo, UefaChampionsLeagueIcon } from './TeamLogos';
 import { SPORTS_CATEGORIES, FEATURED_MATCHES, FEATURED_MATCH, LEAGUES_DATA, LEAGUE_MATCHES, OTHER_SPORTS_MATCHES } from '../data/mockData';
 import { fetchLiveOddsFromProvider } from '../services/oddsApi';
@@ -12,6 +12,8 @@ export const HomeScreen = ({
   onOpenNotifications,
   onOpenDeposit,
   onOpenMenu,
+  onOpenMyBets,
+  onSignOut,
   betslip,
   onToggleOddSelection,
   activeTab,
@@ -557,17 +559,21 @@ export const HomeScreen = ({
           className={`dock-nav-item ${activeTab === 'home' ? 'active' : ''}`}
           onClick={() => setActiveTab('home')}
           title="Home"
+          id="btn-dock-home"
         >
-          <Home size={22} />
+          <Home size={19} />
+          <span>Home</span>
         </button>
 
         <button
           type="button"
-          className={`dock-nav-item ${activeTab === 'sports' ? 'active' : ''}`}
-          onClick={() => setSelectedSport(selectedSport === 'football' ? 'basketball' : 'football')}
-          title="Live Sports"
+          className={`dock-nav-item ${activeTab === 'mybets' ? 'active' : ''}`}
+          onClick={onOpenMyBets}
+          title="My Bets"
+          id="btn-dock-mybets"
         >
-          <Disc size={22} />
+          <BarChart2 size={19} />
+          <span>My Bets</span>
         </button>
 
         <button
@@ -577,7 +583,8 @@ export const HomeScreen = ({
           title="Bet Slip"
           id="btn-dock-betslip"
         >
-          <Ticket size={22} />
+          <Ticket size={19} />
+          <span>Slip</span>
           {betslip.length > 0 && (
             <span className="dock-badge-count">{betslip.length}</span>
           )}
@@ -585,20 +592,24 @@ export const HomeScreen = ({
 
         <button
           type="button"
-          className={`dock-nav-item ${activeTab === 'favorites' ? 'active' : ''}`}
-          onClick={() => onOpenMatchDetails(FEATURED_MATCH)}
-          title="Favorites"
+          className={`dock-nav-item ${activeTab === 'search' ? 'active' : ''}`}
+          onClick={onOpenSearch}
+          title="Search"
+          id="btn-dock-search"
         >
-          <Star size={22} />
+          <Search size={19} />
+          <span>Search</span>
         </button>
 
         <button
           type="button"
-          className={`dock-nav-item ${activeTab === 'menu' ? 'active' : ''}`}
-          onClick={onOpenMenu}
-          title="Account Menu"
+          className="dock-nav-item dock-signout-btn"
+          onClick={onSignOut}
+          title="Sign Out"
+          id="btn-dock-signout"
         >
-          <Menu size={22} />
+          <LogOut size={19} />
+          <span>Sign Out</span>
         </button>
       </div>
     </div>
