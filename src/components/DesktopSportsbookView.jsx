@@ -32,16 +32,20 @@ export const DesktopSportsbookView = ({
   const [liveMatches, setLiveMatches] = useState([]);
   const [isLoadingLive, setIsLoadingLive] = useState(false);
 
-  // Fetch real games from The Odds API on mount & category change
+  // Fetch real games with instant Upstash Redis cache + background SWR
   useEffect(() => {
     let isMounted = true;
     setIsLoadingLive(true);
-    fetchLiveOddsFromProvider(activeCategory).then(res => {
+    fetchLiveOddsFromProvider(activeCategory, (bgRes) => {
+      if (isMounted && bgRes.isLiveFeed && bgRes.data?.length > 0) {
+        setLiveMatches(bgRes.data);
+      }
+    }).then(res => {
       if (isMounted) {
         setIsLoadingLive(false);
         if (res.isLiveFeed && res.data?.length > 0) {
           setLiveMatches(res.data);
-        } else {
+        } else if (!res.fromCache) {
           setLiveMatches([]);
         }
       }

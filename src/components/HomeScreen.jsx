@@ -25,10 +25,14 @@ export const HomeScreen = ({
 
   useEffect(() => {
     let isMounted = true;
-    fetchLiveOddsFromProvider(selectedSport).then(res => {
+    fetchLiveOddsFromProvider(selectedSport, (bgRes) => {
+      if (isMounted && bgRes.isLiveFeed && bgRes.data?.length > 0) {
+        setLiveMatches(bgRes.data);
+      }
+    }).then(res => {
       if (isMounted && res.isLiveFeed && res.data?.length > 0) {
         setLiveMatches(res.data);
-      } else if (isMounted) {
+      } else if (isMounted && !res.fromCache) {
         setLiveMatches([]);
       }
     });

@@ -1,4 +1,7 @@
 // Vertex Betting - Real Live The Odds API Service & Automated Settlement Engine
+// Integrated with Upstash Redis Ultra-Fast Caching & Instant Stale-While-Revalidate Engine
+
+import { getCachedDataSync, setCachedData, fetchWithInstantRedisCache } from './redisCache';
 
 const DEFAULT_API_KEY = 'b5dfd0916bfd8ddab51fce377d45aa48';
 const STORAGE_KEY_API_CONFIG = 'vertex_odds_api_config';
@@ -46,79 +49,120 @@ export const SPORT_KEYS_MAP = {
   cricket: 'cricket_international_t20'
 };
 
-// Fetch live odds from feed provider
-export const fetchLiveOddsFromProvider = async (sportId = 'football') => {
+// Internal fetcher for upstream live odds
+const fetchUpstreamOdds = async (sportKey, sportId) => {
   const config = getOddsApiConfig();
+  const url = `${config.baseUrl}/sports/${sportKey}/odds/?apiKey=${config.apiKey}&regions=eu,us&markets=h2h&oddsFormat=decimal`;
+  
+  const res = await fetch(url);
+  if (!res.ok) {
+    const errJson = await res.json().catch(() => ({}));
+    throw new Error(errJson.message || `API error ${res.status}`);
+  }
+  const rawMatches = await res.json();
+
+  if (!Array.isArray(rawMatches) || rawMatches.length === 0) {
+    return [];
+  }
+
+  return rawMatches.map((m, index) => {
+    const bookmaker = m.bookmakers?.[0] || {};
+    const h2h = bookmaker.markets?.[0]?.outcomes || [];
+    const homeOutcome = h2h.find(o => o.name === m.home_team) || { price: 1.84 + (index % 5) * 0.1 };
+    const awayOutcome = h2h.find(o => o.name === m.away_team) || { price: 2.50 + (index % 4) * 0.15 };
+    const drawOutcome = h2h.find(o => o.name.toLowerCase() === 'draw') || { price: 3.40 };
+
+    const commenceDate = new Date(m.commence_time);
+    const isLiveNow = commenceDate <= new Date();
+
+    return {
+      id: m.id,
+      sport: sportId,
+      league: m.sport_title || 'Premier League',
+      date: commenceDate.toLocaleDateString([], { month: 'short', day: 'numeric' }),
+      time: commenceDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      homeTeam: { name: m.home_team, shortName: m.home_team.substring(0, 3).toUpperCase() },
+      awayTeam: { name: m.away_team, shortName: m.away_team.substring(0, 3).toUpperCase() },
+      odds: {
+        home: Number(homeOutcome.price) || 1.84,
+        draw: Number(drawOutcome.price) || 3.40,
+        away: Number(awayOutcome.price) || 2.50
+      },
+      bookmakerName: bookmaker.title || 'Live Feed',
+      isLive: isLiveNow
+    };
+  });
+};
+
+/**
+ * Fetch live odds with Upstash Redis Ultra-Fast Caching
+ * Instant 0ms return if cached, with background revalidation.
+ */
+export const fetchLiveOddsFromProvider = async (sportId = 'football', onBackgroundUpdate = null) => {
   const sportKey = SPORT_KEYS_MAP[sportId];
 
   if (!sportKey) {
     return { isLiveFeed: false, data: [], count: 0 };
   }
 
-  try {
-    const url = `${config.baseUrl}/sports/${sportKey}/odds/?apiKey=${config.apiKey}&regions=eu,us&markets=h2h&oddsFormat=decimal`;
-    const res = await fetch(url);
-    if (!res.ok) {
-      const errJson = await res.json().catch(() => ({}));
-      throw new Error(errJson.message || `API error ${res.status}`);
+  const cacheKey = `odds_${sportId}`;
+
+  // Instant Tier-0 / Tier-1 cache check (0ms)
+  const cachedMatches = getCachedDataSync(cacheKey);
+
+  // Background fetcher function
+  const triggerBackgroundRefresh = async () => {
+    try {
+      const freshMatches = await fetchUpstreamOdds(sportKey, sportId);
+      if (freshMatches && freshMatches.length > 0) {
+        await setCachedData(cacheKey, freshMatches, 180); // cache for 3 minutes in Redis & localStorage
+        if (onBackgroundUpdate) {
+          onBackgroundUpdate({
+            isLiveFeed: true,
+            data: freshMatches,
+            count: freshMatches.length,
+            fromCache: false
+          });
+        }
+        return freshMatches;
+      }
+    } catch (err) {
+      console.warn(`[OddsAPI] Live fetch note for ${sportId}:`, err.message);
     }
-    const rawMatches = await res.json();
+    return null;
+  };
 
-    if (!Array.isArray(rawMatches) || rawMatches.length === 0) {
-      return { isLiveFeed: true, data: [], count: 0 };
-    }
-
-    // Transform into Vertex Betting match format
-    const transformed = rawMatches.map((m, index) => {
-      // Pick best bookmaker (e.g. Pinnacle, Betfair, BetMGM, or first available)
-      const bookmaker = m.bookmakers?.[0] || {};
-      const h2h = bookmaker.markets?.[0]?.outcomes || [];
-      const homeOutcome = h2h.find(o => o.name === m.home_team) || { price: 1.84 + (index % 5) * 0.1 };
-      const awayOutcome = h2h.find(o => o.name === m.away_team) || { price: 2.50 + (index % 4) * 0.15 };
-      const drawOutcome = h2h.find(o => o.name.toLowerCase() === 'draw') || { price: 3.40 };
-
-      const commenceDate = new Date(m.commence_time);
-      const isLiveNow = commenceDate <= new Date();
-
-      return {
-        id: m.id,
-        sport: sportId,
-        league: m.sport_title || 'Premier League',
-        date: commenceDate.toLocaleDateString([], { month: 'short', day: 'numeric' }),
-        time: commenceDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        homeTeam: { name: m.home_team, shortName: m.home_team.substring(0, 3).toUpperCase() },
-        awayTeam: { name: m.away_team, shortName: m.away_team.substring(0, 3).toUpperCase() },
-        odds: {
-          home: Number(homeOutcome.price) || 1.84,
-          draw: Number(drawOutcome.price) || 3.40,
-          away: Number(awayOutcome.price) || 2.50
-        },
-        bookmakerName: bookmaker.title || 'Live Feed',
-        isLive: isLiveNow
-      };
-    });
+  // If already in instant cache, return IMMEDIATELY and revalidate in background
+  if (cachedMatches && Array.isArray(cachedMatches) && cachedMatches.length > 0) {
+    // Non-blocking background sync
+    triggerBackgroundRefresh();
 
     return {
       isLiveFeed: true,
-      data: transformed,
-      count: transformed.length
-    };
-  } catch (err) {
-    console.warn('Real Odds API fetch warning:', err.message);
-    return {
-      isLiveFeed: false,
-      error: err.message,
-      data: []
+      data: cachedMatches,
+      count: cachedMatches.length,
+      fromCache: true
     };
   }
+
+  // If no cache, perform fetch and cache in Upstash Redis
+  try {
+    const data = await triggerBackgroundRefresh();
+    if (data && data.length > 0) {
+      return { isLiveFeed: true, data, count: data.length, fromCache: false };
+    }
+  } catch (err) {
+    console.warn('Real Odds API fetch warning:', err.message);
+  }
+
+  return {
+    isLiveFeed: false,
+    data: [],
+    count: 0
+  };
 };
 
-// 2. Automated Bet Settlement Engine
-// In-memory score cache to protect The Odds API rate limit while running 1s settlement engine
-let scoresCache = [];
-let lastScoresFetchTime = 0;
-
-// System continuously checks real scores from The Odds API & processes settlements
+// 2. Automated Bet Settlement Engine with Redis Caching
 export const checkBetSettlements = async (openBets = [], simulatedFullTime = null) => {
   if (openBets.length === 0) return [];
 
@@ -147,11 +191,13 @@ export const checkBetSettlements = async (openBets = [], simulatedFullTime = nul
     return settledResults;
   }
 
-  // Live Odds API Scores Endpoint Check (refreshes upstream data every 15s to conserve API quota while ticking every 1s)
+  // Live Odds API Scores Endpoint Check (cached for 20s to preserve quota)
   if (config.apiKey) {
     try {
-      const now = Date.now();
-      if (now - lastScoresFetchTime > 15000 || scoresCache.length === 0) {
+      const cacheKey = 'live_settlement_scores';
+      let scores = getCachedDataSync(cacheKey);
+
+      if (!scores) {
         const sportKeys = ['soccer_epl', 'soccer_uefa_champs_league', 'basketball_nba'];
         const fetchedScores = [];
         for (const sportKey of sportKeys) {
@@ -166,15 +212,15 @@ export const checkBetSettlements = async (openBets = [], simulatedFullTime = nul
             // ignore individual sport fetch failure
           }
         }
-        scoresCache = fetchedScores;
-        lastScoresFetchTime = now;
+        scores = fetchedScores;
+        setCachedData(cacheKey, scores, 25);
       }
 
       // Check current open bets against scores
-      if (scoresCache.length > 0) {
+      if (scores && scores.length > 0) {
         for (const bet of openBets) {
           for (const pick of bet.picks) {
-            const matchScore = scoresCache.find(s => (s.id === pick.matchId || s.id === pick.id) && s.completed);
+            const matchScore = scores.find(s => (s.id === pick.matchId || s.id === pick.id) && s.completed);
             if (matchScore && matchScore.scores?.length >= 2) {
               const homeScore = Number(matchScore.scores.find(s => s.name === matchScore.home_team)?.score || 0);
               const awayScore = Number(matchScore.scores.find(s => s.name === matchScore.away_team)?.score || 0);
