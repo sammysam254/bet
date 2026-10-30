@@ -1,8 +1,5 @@
-import React, { useState } from 'react';
-import { X, User, Ticket, CreditCard, Key, LogOut, CheckCircle2, ChevronRight, Shield, Bell, Zap, Database } from 'lucide-react';
-import { getOddsApiConfig, saveOddsApiConfig } from '../services/oddsApi';
-import { getRedisConfig, saveRedisConfig } from '../services/redisCache';
-import { getSupabaseConfig, saveSupabaseConfig } from '../services/supabaseClient';
+import React from 'react';
+import { X, Ticket, CreditCard, LogOut, ChevronRight, Shield, Bell, Trophy, ArrowUpRight, ArrowDownLeft, Lock } from 'lucide-react';
 
 export const SportsbookMenuModal = ({
   isOpen,
@@ -13,76 +10,98 @@ export const SportsbookMenuModal = ({
   onSignOut,
   onOpenNotifications
 }) => {
-  const [showApiSettings, setShowApiSettings] = useState(false);
-  const [apiKeyInput, setApiKeyInput] = useState(() => getOddsApiConfig().apiKey || '');
-  
-  const redisConfig = getRedisConfig();
-  const [redisUrlInput, setRedisUrlInput] = useState(redisConfig.url || '');
-  const [redisTokenInput, setRedisTokenInput] = useState(redisConfig.token || '');
-
-  const supabaseConfig = getSupabaseConfig();
-  const [supabaseUrlInput, setSupabaseUrlInput] = useState(supabaseConfig.url || '');
-  const [supabaseKeyInput, setSupabaseKeyInput] = useState(supabaseConfig.anonKey || '');
-
-  const [apiSaved, setApiSaved] = useState(false);
-
   if (!isOpen) return null;
-
-  const handleSaveAllSettings = (e) => {
-    e.preventDefault();
-    saveOddsApiConfig({ apiKey: apiKeyInput });
-    saveRedisConfig({ url: redisUrlInput, token: redisTokenInput });
-    saveSupabaseConfig({ url: supabaseUrlInput, anonKey: supabaseKeyInput });
-    setApiSaved(true);
-    setTimeout(() => setApiSaved(false), 2400);
-  };
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
-      <div className="drawer-sheet" style={{ maxWidth: '460px', maxHeight: '90vh', overflowY: 'auto' }} onClick={(e) => e.stopPropagation()}>
+      <div className="drawer-sheet" style={{ maxWidth: '440px' }} onClick={(e) => e.stopPropagation()}>
         <div className="drawer-header">
-          <h3 className="drawer-title">Sportsbook Account & Settings</h3>
+          <h3 className="drawer-title">Sportsbook Account</h3>
           <button type="button" className="drawer-close-btn" onClick={onClose}>
             <X size={20} />
           </button>
         </div>
 
-        {/* Profile Info */}
-        <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: '18px', padding: '16px', display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <img
-            src={userProfile.avatar || '/assets/user.jpg'}
-            alt="User Avatar"
-            style={{ width: '48px', height: '48px', borderRadius: '50%', objectFit: 'cover', border: '2px solid #2f68ff' }}
-          />
+        {/* User Profile Card */}
+        <div style={{ background: 'linear-gradient(135deg, rgba(47, 104, 255, 0.12), rgba(30, 41, 59, 0.6))', border: '1px solid rgba(47, 104, 255, 0.3)', borderRadius: '18px', padding: '16px', display: 'flex', alignItems: 'center', gap: '14px', position: 'relative', overflow: 'hidden' }}>
+          <div style={{ position: 'relative' }}>
+            <img
+              src={userProfile.avatar || '/assets/user.jpg'}
+              alt="User Avatar"
+              style={{ width: '52px', height: '52px', borderRadius: '50%', objectFit: 'cover', border: '2.5px solid #2f68ff' }}
+            />
+            <div style={{ position: 'absolute', bottom: '0', right: '0', width: '13px', height: '13px', borderRadius: '50%', background: '#10b981', border: '2px solid #0f172a' }} />
+          </div>
           <div style={{ flex: 1 }}>
-            <h4 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#fff' }}>{userProfile.name}</h4>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <h4 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#fff' }}>{userProfile.name}</h4>
+              <span style={{ fontSize: '0.65rem', background: '#e0b115', color: '#000', fontWeight: '900', padding: '1px 6px', borderRadius: '9999px' }}>VIP 3</span>
+            </div>
             <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>{userProfile.email}</span>
           </div>
           <div style={{ textAlign: 'right' }}>
-            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)' }}>Balance</span>
-            <div style={{ fontSize: '1.15rem', fontWeight: '900', color: '#60a5fa' }}>${userProfile.balance.toLocaleString()}</div>
+            <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', textTransform: 'uppercase' }}>Available</span>
+            <div style={{ fontSize: '1.25rem', fontWeight: '900', color: '#60a5fa' }}>${userProfile.balance.toLocaleString()}</div>
           </div>
         </div>
 
-        {/* Live Infrastructure Status Chips */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', margin: '4px 0' }}>
-          <div style={{ background: 'rgba(16, 185, 129, 0.1)', border: '1px solid rgba(16, 185, 129, 0.25)', borderRadius: '12px', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Zap size={15} color="#10b981" />
-            <div style={{ fontSize: '0.74rem' }}>
-              <strong style={{ color: '#34d399', display: 'block' }}>Upstash Redis</strong>
-              <span style={{ color: '#94a3b8' }}>0ms Instant Cache</span>
-            </div>
+        {/* Quick Cashier Actions */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginTop: '4px' }}>
+          <button
+            type="button"
+            className="btn-place-bet"
+            style={{ padding: '10px 14px', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+            onClick={() => {
+              onClose();
+              onOpenDeposit();
+            }}
+          >
+            <ArrowUpRight size={16} />
+            Deposit Funds
+          </button>
+          <button
+            type="button"
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid var(--border-subtle)',
+              color: '#fff',
+              borderRadius: '12px',
+              padding: '10px 14px',
+              fontWeight: '700',
+              fontSize: '0.85rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '6px',
+              cursor: 'pointer'
+            }}
+            onClick={() => {
+              onClose();
+              onOpenDeposit();
+            }}
+          >
+            <ArrowDownLeft size={16} />
+            Withdraw
+          </button>
+        </div>
+
+        {/* User Betting Stats Summary */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px', background: 'rgba(255,255,255,0.02)', padding: '12px', borderRadius: '14px', border: '1px solid var(--border-subtle)' }}>
+          <div style={{ textAlign: 'center' }}>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Win Rate</span>
+            <strong style={{ fontSize: '0.95rem', color: '#10b981', fontWeight: '800' }}>68.4%</strong>
           </div>
-          <div style={{ background: 'rgba(59, 130, 246, 0.1)', border: '1px solid rgba(59, 130, 246, 0.25)', borderRadius: '12px', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Database size={15} color="#60a5fa" />
-            <div style={{ fontSize: '0.74rem' }}>
-              <strong style={{ color: '#60a5fa', display: 'block' }}>Supabase DB</strong>
-              <span style={{ color: '#94a3b8' }}>Auto Synchronized</span>
-            </div>
+          <div style={{ textAlign: 'center', borderLeft: '1px solid var(--border-subtle)', borderRight: '1px solid var(--border-subtle)' }}>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Open Bets</span>
+            <strong style={{ fontSize: '0.95rem', color: '#60a5fa', fontWeight: '800' }}>2 Active</strong>
+          </div>
+          <div style={{ textAlign: 'center' }}>
+            <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'block' }}>Reward Pts</span>
+            <strong style={{ fontSize: '0.95rem', color: '#e0b115', fontWeight: '800' }}>1,840 pts</strong>
           </div>
         </div>
 
-        {/* Menu Navigation List */}
+        {/* Navigation Actions */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <button
             type="button"
@@ -94,22 +113,7 @@ export const SportsbookMenuModal = ({
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <Ticket size={18} color="#2f68ff" />
-              <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>My Bets & Cashout History</span>
-            </div>
-            <ChevronRight size={18} color="var(--text-muted)" />
-          </button>
-
-          <button
-            type="button"
-            className="menu-action-item"
-            onClick={() => {
-              onClose();
-              onOpenDeposit();
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <CreditCard size={18} color="#10b981" />
-              <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>Deposit & Wallet Cashier</span>
+              <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>My Bets & Settlement History</span>
             </div>
             <ChevronRight size={18} color="var(--text-muted)" />
           </button>
@@ -124,7 +128,7 @@ export const SportsbookMenuModal = ({
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
               <Bell size={18} color="#f59e0b" />
-              <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>Game Alerts & Notifications</span>
+              <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>Match Alerts & Odds Boosts</span>
             </div>
             <ChevronRight size={18} color="var(--text-muted)" />
           </button>
@@ -132,149 +136,34 @@ export const SportsbookMenuModal = ({
           <button
             type="button"
             className="menu-action-item"
-            onClick={() => setShowApiSettings(!showApiSettings)}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <Key size={18} color="#a855f7" />
-              <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>API Keys, Redis & DB Settings</span>
-            </div>
-            <span style={{ fontSize: '0.74rem', background: 'rgba(168, 85, 247, 0.15)', color: '#c084fc', padding: '3px 8px', borderRadius: '9999px', fontWeight: '700' }}>
-              All Live
-            </span>
-          </button>
-        </div>
-
-        {/* API, Redis & Supabase Settings Box */}
-        {showApiSettings && (
-          <form
-            onSubmit={handleSaveAllSettings}
-            style={{
-              background: 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '16px',
-              padding: '16px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px'
+            onClick={() => {
+              onClose();
+              onOpenDeposit();
             }}
           >
-            {/* Upstash Redis Section */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                <span style={{ fontSize: '0.84rem', fontWeight: '800', color: '#10b981' }}>⚡ Upstash Redis REST URL</span>
-                <span style={{ fontSize: '0.72rem', color: '#34d399' }}>Instant Loading</span>
-              </div>
-              <input
-                type="text"
-                placeholder="https://your-upstash-redis.upstash.io"
-                value={redisUrlInput}
-                onChange={(e) => setRedisUrlInput(e.target.value)}
-                style={{
-                  width: '100%',
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: '10px',
-                  padding: '9px 12px',
-                  color: '#fff',
-                  fontSize: '0.82rem'
-                }}
-              />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <CreditCard size={18} color="#10b981" />
+              <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>Payment Methods & Wallet</span>
             </div>
+            <ChevronRight size={18} color="var(--text-muted)" />
+          </button>
 
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                <span style={{ fontSize: '0.84rem', fontWeight: '800', color: '#10b981' }}>⚡ Upstash Redis REST Token</span>
-              </div>
-              <input
-                type="password"
-                placeholder="Upstash Redis Bearer Token"
-                value={redisTokenInput}
-                onChange={(e) => setRedisTokenInput(e.target.value)}
-                style={{
-                  width: '100%',
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: '10px',
-                  padding: '9px 12px',
-                  color: '#fff',
-                  fontSize: '0.82rem'
-                }}
-              />
+          <div className="menu-action-item" style={{ cursor: 'default' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Shield size={18} color="#60a5fa" />
+              <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>Responsible Gaming & Limits</span>
             </div>
+            <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: '700' }}>Active</span>
+          </div>
 
-            {/* Supabase Section */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                <span style={{ fontSize: '0.84rem', fontWeight: '800', color: '#38bdf8' }}>🗄️ Supabase Project URL</span>
-                <span style={{ fontSize: '0.72rem', color: '#38bdf8' }}>Database Live</span>
-              </div>
-              <input
-                type="text"
-                value={supabaseUrlInput}
-                onChange={(e) => setSupabaseUrlInput(e.target.value)}
-                style={{
-                  width: '100%',
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: '10px',
-                  padding: '9px 12px',
-                  color: '#fff',
-                  fontSize: '0.82rem'
-                }}
-              />
+          <div className="menu-action-item" style={{ cursor: 'default' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <Lock size={18} color="#a855f7" />
+              <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>Account Security & 2FA</span>
             </div>
-
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                <span style={{ fontSize: '0.84rem', fontWeight: '800', color: '#38bdf8' }}>🗄️ Supabase Anon Public Key</span>
-              </div>
-              <input
-                type="password"
-                value={supabaseKeyInput}
-                onChange={(e) => setSupabaseKeyInput(e.target.value)}
-                style={{
-                  width: '100%',
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: '10px',
-                  padding: '9px 12px',
-                  color: '#fff',
-                  fontSize: '0.82rem'
-                }}
-              />
-            </div>
-
-            {/* The Odds API Section */}
-            <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '4px' }}>
-                <span style={{ fontSize: '0.84rem', fontWeight: '800', color: '#a855f7' }}>📡 The Odds API Key</span>
-                <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>the-odds-api.com</span>
-              </div>
-              <input
-                type="text"
-                value={apiKeyInput}
-                onChange={(e) => setApiKeyInput(e.target.value)}
-                style={{
-                  width: '100%',
-                  background: 'rgba(255,255,255,0.06)',
-                  border: '1px solid var(--border-subtle)',
-                  borderRadius: '10px',
-                  padding: '9px 12px',
-                  color: '#fff',
-                  fontSize: '0.82rem'
-                }}
-              />
-            </div>
-
-            <button
-              type="submit"
-              className="btn-place-bet"
-              style={{ padding: '10px', fontSize: '0.85rem', marginTop: '4px' }}
-            >
-              {apiSaved ? '✓ All Credentials Updated & Synchronized!' : 'Save & Sync Infrastructure'}
-            </button>
-          </form>
-        )}
+            <span style={{ fontSize: '0.72rem', color: '#10b981', fontWeight: '700' }}>Protected</span>
+          </div>
+        </div>
 
         {/* Sign Out Button */}
         <button
@@ -284,7 +173,7 @@ export const SportsbookMenuModal = ({
             border: '1px solid rgba(239, 68, 68, 0.25)',
             color: '#f87171',
             borderRadius: '14px',
-            padding: '14px',
+            padding: '13px',
             fontWeight: '700',
             fontSize: '0.9rem',
             cursor: 'pointer',
@@ -292,7 +181,7 @@ export const SportsbookMenuModal = ({
             alignItems: 'center',
             justifyContent: 'center',
             gap: '8px',
-            marginTop: '8px'
+            marginTop: '4px'
           }}
           onClick={() => {
             onClose();
@@ -302,6 +191,14 @@ export const SportsbookMenuModal = ({
           <LogOut size={16} />
           Sign Out of Account
         </button>
+
+        {/* Trust Badges */}
+        <div style={{ textAlign: 'center', paddingTop: '4px' }}>
+          <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'inline-flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#10b981' }} />
+            256-Bit SSL Encrypted • Licensed Sportsbook 18+
+          </span>
+        </div>
       </div>
     </div>
   );

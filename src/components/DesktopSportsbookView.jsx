@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart2, Star, Search, Bell, Trophy, Shield, Flame, Activity, Disc, ChevronRight, Radio, Key, Clock, DollarSign, CheckCircle2, Ticket, RefreshCw } from 'lucide-react';
+import { BarChart2, Star, Search, Bell, Trophy, Shield, Flame, Activity, Disc, ChevronLeft, ChevronRight, Radio, Key, Clock, DollarSign, CheckCircle2, Ticket, RefreshCw, Zap, TrendingUp, Sparkles, Filter } from 'lucide-react';
 import confetti from 'canvas-confetti';
-import { TeamLogo, UefaChampionsLeagueIcon } from './TeamLogos';
-import { FEATURED_MATCH, LEAGUE_MATCHES, OTHER_SPORTS_MATCHES, SPORTS_CATEGORIES, LEAGUES_LIST } from '../data/mockData';
+import { TeamLogo, UefaChampionsLeagueIcon, PremierLeagueIcon, LaLigaIcon } from './TeamLogos';
+import { FEATURED_MATCHES, FEATURED_MATCH, LEAGUES_DATA, LEAGUE_MATCHES, OTHER_SPORTS_MATCHES, SPORTS_CATEGORIES, LEAGUES_LIST } from '../data/mockData';
 import { fetchLiveOddsFromProvider } from '../services/oddsApi';
 
 export const DesktopSportsbookView = ({
@@ -24,6 +24,7 @@ export const DesktopSportsbookView = ({
 }) => {
   const [activeCategory, setActiveCategory] = useState('football');
   const [activeCompetition, setActiveCompetition] = useState('ucl');
+  const [selectedLeagueFilter, setSelectedLeagueFilter] = useState('all');
   const [chatComment, setChatComment] = useState('');
   const [chatList, setChatList] = useState(FEATURED_MATCH.comments || []);
   const [rightPanelTab, setRightPanelTab] = useState('betslip'); // 'betslip' | 'mybets'
@@ -31,6 +32,37 @@ export const DesktopSportsbookView = ({
   const [desktopNavTab, setDesktopNavTab] = useState('sportsbook'); // 'sportsbook', 'live', 'ucl', 'promos'
   const [liveMatches, setLiveMatches] = useState([]);
   const [isLoadingLive, setIsLoadingLive] = useState(false);
+
+  // 5-Second Auto-Slide Hero Carousel State
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [isHeroPaused, setIsHeroPaused] = useState(false);
+  const [slideProgress, setSlideProgress] = useState(0);
+
+  useEffect(() => {
+    if (isHeroPaused) return;
+    const intervalMs = 100;
+    const totalMs = 5000;
+    const timer = setInterval(() => {
+      setSlideProgress(prev => {
+        if (prev >= 100) {
+          setHeroIndex(idx => (idx + 1) % FEATURED_MATCHES.length);
+          return 0;
+        }
+        return prev + (intervalMs / totalMs) * 100;
+      });
+    }, intervalMs);
+    return () => clearInterval(timer);
+  }, [isHeroPaused]);
+
+  const handleNextHero = () => {
+    setHeroIndex(prev => (prev + 1) % FEATURED_MATCHES.length);
+    setSlideProgress(0);
+  };
+
+  const handlePrevHero = () => {
+    setHeroIndex(prev => (prev - 1 + FEATURED_MATCHES.length) % FEATURED_MATCHES.length);
+    setSlideProgress(0);
+  };
 
   // Fetch real games with instant Upstash Redis cache + background SWR
   useEffect(() => {
@@ -347,277 +379,438 @@ export const DesktopSportsbookView = ({
           {/* 1. FOOTBALL / CHAMPIONS LEAGUE ARENA */}
           {activeCategory === 'football' && (
             <div key="football-arena" className="screen-transition-enter" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {/* Featured Live Match Hero with In-Depth Stats */}
-              <div className="featured-match-card" style={{ padding: '24px' }}>
-                <div className="featured-top-bar">
-                  <span className="matchday-text" style={{ fontSize: '0.85rem' }}>Matchday 1 • UEFA Champions League Group A</span>
-                  <div className="live-pill-badge" style={{ padding: '4px 12px', fontSize: '0.75rem' }}>
-                    <span className="live-pulse-dot animate-pulse-live" />
-                    <span>LIVE IN-PLAY</span>
-                  </div>
-                </div>
-
-                <div className="featured-score-arena" style={{ padding: '16px 20px' }}>
-                  <div className="team-block" style={{ width: '140px' }}>
-                    <TeamLogo team={FEATURED_MATCH.homeTeam.name} size={64} />
-                    <span className="team-name-text" style={{ fontSize: '1.15rem' }}>{FEATURED_MATCH.homeTeam.name}</span>
-                  </div>
-
-                  <div className="live-score-center">
-                    <div className="live-score-numbers" style={{ fontSize: '3rem' }}>
-                      {FEATURED_MATCH.homeTeam.score} : {FEATURED_MATCH.awayTeam.score}
-                    </div>
-                    <div className="live-clock-time" style={{ fontSize: '1rem' }}>{FEATURED_MATCH.clock} (1st half)</div>
-                  </div>
-
-                  <div className="team-block" style={{ width: '140px' }}>
-                    <TeamLogo team={FEATURED_MATCH.awayTeam.name} size={64} />
-                    <span className="team-name-text" style={{ fontSize: '1.15rem' }}>{FEATURED_MATCH.awayTeam.name}</span>
-                  </div>
-                </div>
-
-                {/* Goalscorers Timeline */}
-                <div className="match-events-timeline" style={{ marginBottom: '16px' }}>
-                  <div className="events-home-list">
-                    <div>O. Watkins 11' ⚽</div>
-                    <div>O. Watkins 15' ⚽</div>
-                  </div>
-                  <div className="events-ball-icon">⚽</div>
-                  <div className="events-away-list">
-                    <div>22' I. Mbaye ⚽</div>
-                  </div>
-                </div>
-
-                {/* Live Odds Matrix */}
-                <div className="odds-buttons-grid">
+            {/* Featured Live Match Hero Slider (Slides every 5 seconds) */}
+            {(() => {
+              const currentHero = FEATURED_MATCHES[heroIndex] || FEATURED_MATCHES[0];
+              return (
+                <div
+                  className="featured-match-card"
+                  style={{ padding: '24px', position: 'relative' }}
+                  onMouseEnter={() => setIsHeroPaused(true)}
+                  onMouseLeave={() => setIsHeroPaused(false)}
+                >
+                  {/* Prev / Next Carousel Controls */}
                   <button
                     type="button"
-                    className={`odds-pill-btn ${isOddSelected('featured-1', '1') ? 'selected' : ''}`}
-                    onClick={() =>
-                      onToggleOddSelection({
-                        matchId: FEATURED_MATCH.id,
-                        matchTitle: 'Chelsea vs Man United',
-                        outcome: '1',
-                        selectionName: 'Chelsea to Win',
-                        odds: FEATURED_MATCH.odds.home
-                      })
-                    }
+                    className="hero-nav-arrow hero-nav-prev"
+                    onClick={(e) => { e.stopPropagation(); handlePrevHero(); }}
+                    title="Previous Featured Match"
                   >
-                    <span className="odds-label">1 (Chelsea)</span>
-                    <span className="odds-val">{FEATURED_MATCH.odds.home.toFixed(2)}</span>
+                    <ChevronLeft size={20} />
                   </button>
                   <button
                     type="button"
-                    className={`odds-pill-btn ${isOddSelected('featured-1', 'X') ? 'selected' : ''}`}
-                    onClick={() =>
-                      onToggleOddSelection({
-                        matchId: FEATURED_MATCH.id,
-                        matchTitle: 'Chelsea vs Man United',
-                        outcome: 'X',
-                        selectionName: 'Draw',
-                        odds: FEATURED_MATCH.odds.draw
-                      })
-                    }
+                    className="hero-nav-arrow hero-nav-next"
+                    onClick={(e) => { e.stopPropagation(); handleNextHero(); }}
+                    title="Next Featured Match"
                   >
-                    <span className="odds-label">X (Draw)</span>
-                    <span className="odds-val">{FEATURED_MATCH.odds.draw.toFixed(2)}</span>
+                    <ChevronRight size={20} />
                   </button>
-                  <button
-                    type="button"
-                    className={`odds-pill-btn ${isOddSelected('featured-1', '2') ? 'selected' : ''}`}
-                    onClick={() =>
-                      onToggleOddSelection({
-                        matchId: FEATURED_MATCH.id,
-                        matchTitle: 'Chelsea vs Man United',
-                        outcome: '2',
-                        selectionName: 'Man United to Win',
-                        odds: FEATURED_MATCH.odds.away
-                      })
-                    }
-                  >
-                    <span className="odds-label">2 (Man United)</span>
-                    <span className="odds-val">{FEATURED_MATCH.odds.away.toFixed(2)}</span>
-                  </button>
-                </div>
-              </div>
 
-              {/* In-Play Detailed Stats & 2D Radar */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px' }}>
-                <div className="inplay-stats-card">
-                  <div className="watermark-crest-left">
-                    <TeamLogo team="Chelsea" size={160} />
-                  </div>
-                  <div className="watermark-crest-right">
-                    <TeamLogo team="Man United" size={160} />
-                  </div>
-
-                  <h4 style={{ fontSize: '0.9rem', fontWeight: '800', marginBottom: '4px', zIndex: 2 }}>
-                    Match In-Play Statistics
-                  </h4>
-
-                  <div className="stat-row-item">
-                    <span className="stat-num-home">56</span>
-                    <span className="stat-label-center">Attacks</span>
-                    <span className="stat-num-away highlight-red"><span className="arrow-up-red">↑</span>75</span>
-                  </div>
-                  <div className="stat-row-item">
-                    <span className="stat-num-home highlight-blue">25<span className="arrow-up-blue">↑</span></span>
-                    <span className="stat-label-center">Dangers</span>
-                    <span className="stat-num-away">21</span>
-                  </div>
-                  <div className="stat-row-item">
-                    <span className="stat-num-home">16</span>
-                    <span className="stat-label-center">Saves</span>
-                    <span className="stat-num-away">16</span>
-                  </div>
-                  <div className="stat-row-item">
-                    <span className="stat-num-home">25</span>
-                    <span className="stat-label-center">Shots</span>
-                    <span className="stat-num-away highlight-red"><span className="arrow-up-red">↑</span>28</span>
-                  </div>
-                  <div className="stat-row-item">
-                    <span className="stat-num-home highlight-blue">7<span className="arrow-up-blue">↑</span></span>
-                    <span className="stat-label-center">OnTarget</span>
-                    <span className="stat-num-away">6</span>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                  <div className="h2h-probability-card" style={{ margin: 0 }}>
-                    <div className="h2h-teams-header">
-                      <div className="h2h-team-chip">
-                        <TeamLogo team="Chelsea" size={20} />
-                        <span>Chelsea</span>
-                      </div>
-                      <div className="h2h-team-chip">
-                        <span>Man United</span>
-                        <TeamLogo team="Man United" size={20} />
-                      </div>
-                    </div>
-
-                    <div className="h2h-segmented-bar">
-                      <div className="segment-chelsea" style={{ width: '46.67%' }}>46.67%</div>
-                      <div className="segment-draw" style={{ width: '20%' }}>20%</div>
-                      <div className="segment-manutd" style={{ width: '33.33%' }}>33.33%</div>
-                    </div>
-
-                    <div className="h2h-legend-row">
-                      <div className="legend-item"><span className="legend-circle legend-blue" /><span>7 Wins</span></div>
-                      <div className="legend-item"><span className="legend-circle legend-grey" /><span>3 Draws</span></div>
-                      <div className="legend-item"><span className="legend-circle legend-red" /><span>5 Wins</span></div>
-                    </div>
-                  </div>
-
-                  <div className="pitch-container" style={{ margin: 0, height: '140px' }}>
-                    <div className="pitch-half-line" />
-                    <div className="pitch-center-circle" />
-                    <div className="pitch-action-pulse" style={{ top: '35%', left: '70%' }}>
-                      <div className="pitch-action-ball" />
-                    </div>
-                    <div className="pitch-label-overlay">
-                      <span>Man United Attack Phase</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Live Fixtures List (Synced with The Odds API) */}
-              <div className="desktop-card">
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <UefaChampionsLeagueIcon size={22} />
-                    <h3 style={{ fontSize: '1.05rem', fontWeight: '800' }}>
-                      {activeCategory === 'football' ? 'Live Football & UEFA Fixtures' : `${activeCategory.toUpperCase()} Fixtures`}
-                    </h3>
-                    {liveMatches.length > 0 && (
-                      <span className="live-pill-badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', borderColor: 'rgba(16, 185, 129, 0.4)' }}>
-                        <span className="live-pulse-dot" style={{ background: '#10b981' }} />
-                        LIVE THE ODDS API ({liveMatches.length} MATCHES)
+                  <div className="featured-top-bar" style={{ padding: '0 40px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span className="matchday-text" style={{ fontSize: '0.85rem', fontWeight: '700' }}>{currentHero.matchday}</span>
+                      <span style={{ fontSize: '0.72rem', background: 'rgba(59, 130, 246, 0.2)', color: '#60a5fa', padding: '2px 8px', borderRadius: '6px', fontWeight: '800' }}>
+                        {currentHero.badge}
                       </span>
-                    )}
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      {currentHero.isLive ? (
+                        <div className="live-pill-badge" style={{ padding: '4px 12px', fontSize: '0.75rem' }}>
+                          <span className="live-pulse-dot animate-pulse-live" />
+                          <span>LIVE IN-PLAY ({currentHero.clock})</span>
+                        </div>
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'rgba(255,255,255,0.06)', padding: '4px 12px', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '700', color: '#93c5fd' }}>
+                          <Clock size={13} />
+                          <span>{currentHero.clock}</span>
+                        </div>
+                      )}
+                      <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
+                        {heroIndex + 1}/{FEATURED_MATCHES.length}
+                      </span>
+                    </div>
                   </div>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                    {isLoadingLive ? 'Fetching real-time odds...' : 'All bookmaker odds live (GMT)'}
-                  </span>
+
+                  {/* Team Logos & Score Center */}
+                  <div className="featured-score-arena" style={{ padding: '16px 40px' }}>
+                    <div className="team-block" style={{ width: '160px' }}>
+                      <TeamLogo team={currentHero.homeTeam.name} size={68} />
+                      <span className="team-name-text" style={{ fontSize: '1.18rem', fontWeight: '900', marginTop: '6px' }}>
+                        {currentHero.homeTeam.name}
+                      </span>
+                    </div>
+
+                    <div className="live-score-center">
+                      {currentHero.isLive ? (
+                        <>
+                          <div className="live-score-numbers" style={{ fontSize: '3.2rem', letterSpacing: '4px' }}>
+                            {currentHero.homeTeam.score} : {currentHero.awayTeam.score}
+                          </div>
+                          <div className="live-clock-time" style={{ fontSize: '1rem', color: '#60a5fa' }}>
+                            {currentHero.clock} ({currentHero.period})
+                          </div>
+                        </>
+                      ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '6px' }}>
+                          <span style={{ fontSize: '2rem', fontWeight: '900', color: 'rgba(255,255,255,0.4)', letterSpacing: '2px' }}>VS</span>
+                          <span style={{ fontSize: '0.85rem', color: '#38bdf8', background: 'rgba(56, 189, 248, 0.12)', padding: '4px 12px', borderRadius: '9999px', fontWeight: '700' }}>
+                            {currentHero.time || 'Kickoff Soon'}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="team-block" style={{ width: '160px' }}>
+                      <TeamLogo team={currentHero.awayTeam.name} size={68} />
+                      <span className="team-name-text" style={{ fontSize: '1.18rem', fontWeight: '900', marginTop: '6px' }}>
+                        {currentHero.awayTeam.name}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* AI Hot Insight Banner */}
+                  <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '12px', padding: '9px 16px', margin: '0 40px 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontSize: '0.86rem', color: '#e2e8f0' }}>
+                    <Sparkles size={16} color="#f59e0b" />
+                    <span>{currentHero.hotInsight}</span>
+                  </div>
+
+                  {/* Live Odds Matrix */}
+                  <div className="odds-buttons-grid" style={{ padding: '0 40px' }}>
+                    <button
+                      type="button"
+                      className={`odds-pill-btn ${isOddSelected(currentHero.id, '1') ? 'selected' : ''}`}
+                      onClick={() =>
+                        onToggleOddSelection({
+                          matchId: currentHero.id,
+                          matchTitle: `${currentHero.homeTeam.name} vs ${currentHero.awayTeam.name}`,
+                          outcome: '1',
+                          selectionName: `${currentHero.homeTeam.name} to Win`,
+                          odds: currentHero.odds.home
+                        })
+                      }
+                    >
+                      <span className="odds-label">1 ({currentHero.homeTeam.name})</span>
+                      <span className="odds-val">{currentHero.odds.home.toFixed(2)}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`odds-pill-btn ${isOddSelected(currentHero.id, 'X') ? 'selected' : ''}`}
+                      onClick={() =>
+                        onToggleOddSelection({
+                          matchId: currentHero.id,
+                          matchTitle: `${currentHero.homeTeam.name} vs ${currentHero.awayTeam.name}`,
+                          outcome: 'X',
+                          selectionName: 'Draw',
+                          odds: currentHero.odds.draw
+                        })
+                      }
+                    >
+                      <span className="odds-label">X (Draw)</span>
+                      <span className="odds-val">{currentHero.odds.draw.toFixed(2)}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className={`odds-pill-btn ${isOddSelected(currentHero.id, '2') ? 'selected' : ''}`}
+                      onClick={() =>
+                        onToggleOddSelection({
+                          matchId: currentHero.id,
+                          matchTitle: `${currentHero.homeTeam.name} vs ${currentHero.awayTeam.name}`,
+                          outcome: '2',
+                          selectionName: `${currentHero.awayTeam.name} to Win`,
+                          odds: currentHero.odds.away
+                        })
+                      }
+                    >
+                      <span className="odds-label">2 ({currentHero.awayTeam.name})</span>
+                      <span className="odds-val">{currentHero.odds.away.toFixed(2)}</span>
+                    </button>
+                  </div>
+
+                  {/* 5-Second Timer Progress Bar */}
+                  <div className="hero-timer-track" style={{ margin: '16px 40px 0' }}>
+                    <div className="hero-timer-fill" style={{ width: `${slideProgress}%` }} />
+                  </div>
+
+                  {/* Hero Slide Indicator Dots */}
+                  <div className="hero-dots-row">
+                    {FEATURED_MATCHES.map((m, idx) => (
+                      <button
+                        key={m.id}
+                        type="button"
+                        className={`hero-dot-btn ${idx === heroIndex ? 'active' : ''}`}
+                        onClick={() => { setHeroIndex(idx); setSlideProgress(0); }}
+                        title={`${m.homeTeam.name} vs ${m.awayTeam.name}`}
+                      />
+                    ))}
+                  </div>
                 </div>
+              );
+            })()}
 
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {(liveMatches.length > 0 ? liveMatches : LEAGUE_MATCHES).map(match => (
-                    <div key={match.id} className="desktop-match-item">
-                      <div className="desktop-team-chip" title={match.homeTeam.name}>
-                        <TeamLogo team={match.homeTeam.name} size={30} />
-                        <span>{match.homeTeam.name}</span>
+            {/* In-Play Detailed Stats & AI Match Intelligence */}
+            {(() => {
+              const currentHero = FEATURED_MATCHES[heroIndex] || FEATURED_MATCHES[0];
+              return (
+                <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '16px' }}>
+                  <div className="inplay-stats-card">
+                    <div className="watermark-crest-left">
+                      <TeamLogo team={currentHero.homeTeam.name} size={160} />
+                    </div>
+                    <div className="watermark-crest-right">
+                      <TeamLogo team={currentHero.awayTeam.name} size={160} />
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', zIndex: 2 }}>
+                      <h4 style={{ fontSize: '0.92rem', fontWeight: '800' }}>
+                        Live Match Statistics & Momentum
+                      </h4>
+                      <span style={{ fontSize: '0.72rem', color: '#60a5fa', fontWeight: '700' }}>
+                        {currentHero.homeTeam.name} vs {currentHero.awayTeam.name}
+                      </span>
+                    </div>
+
+                    <div className="stat-row-item">
+                      <span className="stat-num-home">{currentHero.stats.attacks.home}</span>
+                      <span className="stat-label-center">Attacks</span>
+                      <span className={`stat-num-away ${currentHero.stats.attacks.trend === 'away' ? 'highlight-red' : ''}`}>
+                        {currentHero.stats.attacks.away}
+                      </span>
+                    </div>
+                    <div className="stat-row-item">
+                      <span className={`stat-num-home ${currentHero.stats.dangers.trend === 'home' ? 'highlight-blue' : ''}`}>
+                        {currentHero.stats.dangers.home}
+                      </span>
+                      <span className="stat-label-center">Dangerous Attacks</span>
+                      <span className="stat-num-away">{currentHero.stats.dangers.away}</span>
+                    </div>
+                    <div className="stat-row-item">
+                      <span className="stat-num-home">{currentHero.stats.shots.home}</span>
+                      <span className="stat-label-center">Total Shots</span>
+                      <span className="stat-num-away">{currentHero.stats.shots.away}</span>
+                    </div>
+                    <div className="stat-row-item">
+                      <span className="stat-num-home highlight-blue">{currentHero.stats.onTarget.home}</span>
+                      <span className="stat-label-center">Shots On Target</span>
+                      <span className="stat-num-away highlight-red">{currentHero.stats.onTarget.away}</span>
+                    </div>
+                    <div className="stat-row-item">
+                      <span className="stat-num-home">{currentHero.stats.possession.home}%</span>
+                      <span className="stat-label-center">Possession</span>
+                      <span className="stat-num-away">{currentHero.stats.possession.away}%</span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    {/* AI Predictive Win Probability */}
+                    <div className="h2h-probability-card" style={{ margin: 0, padding: '16px' }}>
+                      <div className="h2h-teams-header">
+                        <div className="h2h-team-chip">
+                          <TeamLogo team={currentHero.homeTeam.name} size={22} />
+                          <span>{currentHero.homeTeam.name}</span>
+                        </div>
+                        <span style={{ fontSize: '0.72rem', color: '#60a5fa', fontWeight: '800' }}>AI WIN PROBABILITY</span>
+                        <div className="h2h-team-chip">
+                          <span>{currentHero.awayTeam.name}</span>
+                          <TeamLogo team={currentHero.awayTeam.name} size={22} />
+                        </div>
                       </div>
 
-                      <div className="desktop-match-time-chip">
-                        <span className="match-date-str">{match.date}</span>
-                        <span className="match-time-str">{match.time}</span>
-                        {match.bookmakerName && (
-                          <span className="bookmaker-badge">{match.bookmakerName}</span>
+                      <div className="ai-prob-track">
+                        <div className="ai-prob-seg-home" style={{ width: `${currentHero.prediction.homeWin}%` }} />
+                        <div className="ai-prob-seg-draw" style={{ width: `${currentHero.prediction.draw}%` }} />
+                        <div className="ai-prob-seg-away" style={{ width: `${currentHero.prediction.awayWin}%` }} />
+                      </div>
+
+                      <div className="h2h-legend-row" style={{ marginTop: '8px' }}>
+                        <div className="legend-item">
+                          <span className="legend-circle legend-blue" />
+                          <span>{currentHero.homeTeam.shortName} ({currentHero.prediction.homeWin}%)</span>
+                        </div>
+                        {currentHero.prediction.draw > 0 && (
+                          <div className="legend-item">
+                            <span className="legend-circle legend-grey" />
+                            <span>Draw ({currentHero.prediction.draw}%)</span>
+                          </div>
                         )}
-                      </div>
-
-                      <div className="desktop-team-chip away" title={match.awayTeam.name}>
-                        <span>{match.awayTeam.name}</span>
-                        <TeamLogo team={match.awayTeam.name} size={30} />
-                      </div>
-
-                      <div className="odds-buttons-grid" style={{ width: '240px' }}>
-                        <button
-                          type="button"
-                          className={`odds-pill-btn ${isOddSelected(match.id, '1') ? 'selected' : ''}`}
-                          onClick={() =>
-                            onToggleOddSelection({
-                              matchId: match.id,
-                              matchTitle: `${match.homeTeam.name} vs ${match.awayTeam.name}`,
-                              outcome: '1',
-                              selectionName: `${match.homeTeam.name} to Win`,
-                              odds: match.odds.home
-                            })
-                          }
-                        >
-                          <span className="odds-label">1</span>
-                          <span className="odds-val">{Number(match.odds.home).toFixed(2)}</span>
-                        </button>
-                        <button
-                          type="button"
-                          className={`odds-pill-btn ${isOddSelected(match.id, 'X') ? 'selected' : ''}`}
-                          onClick={() =>
-                            onToggleOddSelection({
-                              matchId: match.id,
-                              matchTitle: `${match.homeTeam.name} vs ${match.awayTeam.name}`,
-                              outcome: 'X',
-                              selectionName: 'Draw',
-                              odds: match.odds.draw
-                            })
-                          }
-                        >
-                          <span className="odds-label">X</span>
-                          <span className="odds-val">{Number(match.odds.draw).toFixed(2)}</span>
-                        </button>
-                        <button
-                          type="button"
-                          className={`odds-pill-btn ${isOddSelected(match.id, '2') ? 'selected' : ''}`}
-                          onClick={() =>
-                            onToggleOddSelection({
-                              matchId: match.id,
-                              matchTitle: `${match.homeTeam.name} vs ${match.awayTeam.name}`,
-                              outcome: '2',
-                              selectionName: `${match.awayTeam.name} to Win`,
-                              odds: match.odds.away
-                            })
-                          }
-                        >
-                          <span className="odds-label">2</span>
-                          <span className="odds-val">{Number(match.odds.away).toFixed(2)}</span>
-                        </button>
+                        <div className="legend-item">
+                          <span className="legend-circle legend-red" />
+                          <span>{currentHero.awayTeam.shortName} ({currentHero.prediction.awayWin}%)</span>
+                        </div>
                       </div>
                     </div>
-                  ))}
+
+                    {/* Key Player Spotlight Card */}
+                    <div style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border-subtle)', borderRadius: '14px', padding: '12px 16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(245, 158, 11, 0.15)', border: '1px solid #f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <Star size={18} color="#f59e0b" />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', display: 'block' }}>Key Player to Watch</span>
+                        <strong style={{ fontSize: '0.88rem', color: '#fff' }}>{currentHero.topPerformer}</strong>
+                      </div>
+                    </div>
+
+                    {/* Interactive 2D Pitch Radar */}
+                    <div className="pitch-container" style={{ margin: 0, height: '125px' }}>
+                      <div className="pitch-half-line" />
+                      <div className="pitch-center-circle" />
+                      <div className="pitch-action-pulse" style={{ top: '35%', left: '68%' }}>
+                        <div className="pitch-action-ball" />
+                      </div>
+                      <div className="pitch-label-overlay">
+                        <span>{currentHero.homeTeam.name} vs {currentHero.awayTeam.name} • Active Attack Phase</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
+              );
+            })()}
+
+            {/* League Quick-Filter Pills */}
+            <div style={{ marginTop: '10px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Filter size={18} color="#60a5fa" />
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: '800' }}>Browse Fixtures by League</h3>
+                </div>
+                <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>All odds updated live</span>
+              </div>
+
+              <div className="league-filter-pills">
+                <button
+                  type="button"
+                  className={`league-pill-btn ${selectedLeagueFilter === 'all' ? 'active' : ''}`}
+                  onClick={() => setSelectedLeagueFilter('all')}
+                >
+                  <span>⚡</span> All Leagues ({LEAGUE_MATCHES.length})
+                </button>
+                {LEAGUES_DATA.map(league => (
+                  <button
+                    key={league.id}
+                    type="button"
+                    className={`league-pill-btn ${selectedLeagueFilter === league.id ? 'active' : ''}`}
+                    onClick={() => setSelectedLeagueFilter(league.id)}
+                  >
+                    <span>{league.flag}</span> {league.name} ({league.matches.length})
+                  </button>
+                ))}
               </div>
             </div>
-          )}
+
+            {/* League-Categorized Fixtures (Champions League under UCL, EPL under EPL, La Liga under La Liga, etc.) */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {(selectedLeagueFilter === 'all'
+                ? LEAGUES_DATA
+                : LEAGUES_DATA.filter(l => l.id === selectedLeagueFilter)
+              ).map(league => (
+                <div key={league.id} className="league-section-card">
+                  {/* League Header */}
+                  <div className="league-header-bar">
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '1.4rem' }}>{league.flag}</span>
+                      <div>
+                        <h4 style={{ fontSize: '1.05rem', fontWeight: '800', color: '#fff', margin: 0 }}>{league.name}</h4>
+                        <span style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>
+                          {league.country} • {league.matches.length} Featured Fixtures
+                        </span>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '0.74rem', background: 'rgba(255,255,255,0.06)', padding: '4px 12px', borderRadius: '9999px', fontWeight: '800', color: league.badgeColor, border: '1px solid rgba(255,255,255,0.1)' }}>
+                      Live Feed
+                    </span>
+                  </div>
+
+                  {/* Matches inside this League */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    {league.matches.map(match => (
+                      <div key={match.id} className="desktop-match-item">
+                        {/* Home Team with Real Official Logo */}
+                        <div className="desktop-team-chip" title={match.homeTeam.name}>
+                          <TeamLogo team={match.homeTeam.name} size={32} />
+                          <span style={{ fontWeight: '700', fontSize: '0.92rem' }}>{match.homeTeam.name}</span>
+                        </div>
+
+                        {/* Kickoff / Match Time */}
+                        <div className="desktop-match-time-chip">
+                          <span className="match-date-str">{match.date}</span>
+                          <span className="match-time-str">{match.time}</span>
+                          {match.isLive ? (
+                            <span className="live-pill-badge" style={{ padding: '2px 8px', fontSize: '0.68rem', marginTop: '3px' }}>
+                              <span className="live-pulse-dot" />
+                              {match.clock || 'LIVE'}
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: '0.68rem', color: '#94a3b8', marginTop: '2px' }}>Upcoming</span>
+                          )}
+                        </div>
+
+                        {/* Away Team with Real Official Logo */}
+                        <div className="desktop-team-chip away" title={match.awayTeam.name}>
+                          <span style={{ fontWeight: '700', fontSize: '0.92rem' }}>{match.awayTeam.name}</span>
+                          <TeamLogo team={match.awayTeam.name} size={32} />
+                        </div>
+
+                        {/* 1X2 Odds Buttons Matrix */}
+                        <div className="odds-buttons-grid" style={{ width: '250px' }}>
+                          <button
+                            type="button"
+                            className={`odds-pill-btn ${isOddSelected(match.id, '1') ? 'selected' : ''}`}
+                            onClick={() =>
+                              onToggleOddSelection({
+                                matchId: match.id,
+                                matchTitle: `${match.homeTeam.name} vs ${match.awayTeam.name}`,
+                                outcome: '1',
+                                selectionName: `${match.homeTeam.name} to Win`,
+                                odds: match.odds.home
+                              })
+                            }
+                          >
+                            <span className="odds-label">1</span>
+                            <span className="odds-val">{Number(match.odds.home).toFixed(2)}</span>
+                          </button>
+                          <button
+                            type="button"
+                            className={`odds-pill-btn ${isOddSelected(match.id, 'X') ? 'selected' : ''}`}
+                            onClick={() =>
+                              onToggleOddSelection({
+                                matchId: match.id,
+                                matchTitle: `${match.homeTeam.name} vs ${match.awayTeam.name}`,
+                                outcome: 'X',
+                                selectionName: 'Draw',
+                                odds: match.odds.draw
+                              })
+                            }
+                          >
+                            <span className="odds-label">X</span>
+                            <span className="odds-val">{Number(match.odds.draw).toFixed(2)}</span>
+                          </button>
+                          <button
+                            type="button"
+                            className={`odds-pill-btn ${isOddSelected(match.id, '2') ? 'selected' : ''}`}
+                            onClick={() =>
+                              onToggleOddSelection({
+                                matchId: match.id,
+                                matchTitle: `${match.homeTeam.name} vs ${match.awayTeam.name}`,
+                                outcome: '2',
+                                selectionName: `${match.awayTeam.name} to Win`,
+                                odds: match.odds.away
+                              })
+                            }
+                          >
+                            <span className="odds-label">2</span>
+                            <span className="odds-val">{Number(match.odds.away).toFixed(2)}</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
           {/* 2. BASKETBALL / NBA ARENA */}
           {activeCategory === 'basketball' && (
