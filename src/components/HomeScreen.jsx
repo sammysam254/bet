@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Bell, BarChart2, Star, ChevronDown, ChevronUp, Home, Disc, Ticket, Menu, Clock, Radio, Key, Sparkles, Filter, LogOut } from 'lucide-react';
+import { Search, Bell, BarChart2, Star, ChevronDown, ChevronUp, Home, Disc, Ticket, Menu, Clock, Radio, Key, Sparkles, Filter, LogOut, Video, Play } from 'lucide-react';
 import { TeamLogo, UefaChampionsLeagueIcon } from './TeamLogos';
 import { SPORTS_CATEGORIES, FEATURED_MATCHES, FEATURED_MATCH, LEAGUES_DATA, LEAGUE_MATCHES, OTHER_SPORTS_MATCHES } from '../data/mockData';
 import { fetchLiveOddsFromProvider } from '../services/oddsApi';
+import { InteractiveGoalReel } from './InteractiveGoalReel';
+import { RealSportsNews } from './RealSportsNews';
+import { InteractiveSportsPulse } from './InteractiveSportsPulse';
 
 export const HomeScreen = ({
   userBalance,
@@ -144,8 +147,22 @@ export const HomeScreen = ({
                 className="featured-match-card"
                 id="card-featured-match"
                 onClick={() => onOpenMatchDetails(activeHero)}
+                style={{ position: 'relative', overflow: 'hidden' }}
               >
-                <div className="featured-top-bar">
+                {/* Ambient Real Pitch Video Background */}
+                <div style={{ position: 'absolute', inset: 0, borderRadius: '24px', overflow: 'hidden', zIndex: 0, pointerEvents: 'none' }}>
+                  <video
+                    src="https://upload.wikimedia.org/wikipedia/commons/6/69/Goal_by_Rafael_Leao.webm"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.16, filter: 'blur(1px)' }}
+                  />
+                  <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(17,20,28,0.78) 0%, rgba(13,15,21,0.95) 100%)' }} />
+                </div>
+
+                <div className="featured-top-bar" style={{ position: 'relative', zIndex: 2 }}>
                   <span className="matchday-text" style={{ fontWeight: '700' }}>{activeHero.matchday}</span>
 
                   <div className="league-center-meta">
@@ -240,6 +257,9 @@ export const HomeScreen = ({
               </div>
             );
           })()}
+
+          {/* Interactive Goal Cam & Real Match Scoring Video Arena */}
+          <InteractiveGoalReel onBetOnMatch={onOpenMatchDetails} />
 
           {/* Sorted Leagues Filter & Accordions */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginTop: '10px' }}>
@@ -494,6 +514,12 @@ export const HomeScreen = ({
           })}
         </div>
       )}
+
+      {/* Interactive Sports Pulse & Live Community Poll */}
+      <InteractiveSportsPulse />
+
+      {/* Real Live Sports Breaking News Wire (Free ESPN Live Feed) */}
+      <RealSportsNews />
 
       {/* ========================================================= */}
       {/* 4. OTHER SPORTS: Clean Ready-for-API Empty State          */}

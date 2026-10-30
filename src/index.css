@@ -2729,5 +2729,949 @@ input {
   margin-bottom: 20px;
 }
 
+/* ==========================================================================
+   INTERACTIVE GOAL REEL & LIVE SCORING VIDEO ARENA
+   ========================================================================== */
+.interactive-goal-reel-card {
+  background: linear-gradient(145deg, #131722 0%, #0c0f17 100%);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 24px;
+  padding: 20px;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  margin-bottom: 24px;
+  overflow: hidden;
+  position: relative;
+}
+
+.reel-header-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.reel-live-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  color: #ef4444;
+  background: rgba(239, 68, 68, 0.12);
+  padding: 3px 10px;
+  border-radius: 9999px;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  margin-bottom: 4px;
+}
+
+.reel-main-title {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+  letter-spacing: -0.2px;
+}
+
+.reel-score-pill {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #34d399;
+  font-size: 0.76rem;
+  font-weight: 800;
+  padding: 5px 12px;
+  border-radius: 9999px;
+}
+
+.reel-video-container {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  max-height: 380px;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #000000;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+}
+
+.reel-html5-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.reel-video-gradient-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.65) 100%);
+  pointer-events: none;
+}
+
+.reel-goal-celebration-banner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 20;
+  background: rgba(13, 17, 24, 0.92);
+  border: 2px solid #3b82f6;
+  border-radius: 20px;
+  padding: 18px 28px;
+  text-align: center;
+  backdrop-filter: blur(16px);
+  animation: pulse-celebrate 0.4s ease-out;
+  box-shadow: 0 0 30px rgba(59, 130, 246, 0.6);
+}
+
+@keyframes pulse-celebrate {
+  0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0; }
+  100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+}
+
+.goal-text-glow {
+  font-size: 1.8rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  background: linear-gradient(90deg, #60a5fa, #38bdf8, #ffffff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.goal-scorer-sub {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #f1f5f9;
+  margin: 4px 0 8px;
+}
+
+.goal-metrics-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 0.78rem;
+  color: #94a3b8;
+  font-weight: 700;
+}
+
+.reel-goal-net-radar-marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  animation: ping-marker 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
+
+@keyframes ping-marker {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.15); }
+}
+
+.radar-target-icon {
+  color: #f59e0b;
+  filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.8));
+}
+
+.radar-speed-tag {
+  font-size: 0.65rem;
+  font-weight: 800;
+  background: rgba(0, 0, 0, 0.75);
+  padding: 2px 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(245, 158, 11, 0.5);
+  color: #ffffff;
+  margin-top: 2px;
+}
+
+.reel-video-controls {
+  position: absolute;
+  bottom: 12px;
+  left: 14px;
+  right: 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 12;
+}
+
+.reel-ctrl-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(8px);
+}
+
+.reel-ctrl-btn:hover {
+  background: #2563eb;
+  border-color: #60a5fa;
+  transform: scale(1.08);
+}
+
+.reel-player-caption {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.65);
+  padding: 6px 14px;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  color: #f1f5f9;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  margin-left: auto;
+}
+
+.reel-goals-timeline {
+  margin-top: 18px;
+}
+
+.timeline-intro-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.timeline-buttons-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.timeline-goal-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 14px;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.timeline-goal-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateY(-1px);
+}
+
+.timeline-goal-btn.active {
+  background: linear-gradient(135deg, rgba(37, 99, 235, 0.25), rgba(30, 41, 59, 0.7));
+  border-color: #3b82f6;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+}
+
+.goal-btn-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.goal-btn-min {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #38bdf8;
+}
+
+.goal-btn-speed {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #f97316;
+}
+
+.goal-btn-scorer {
+  font-size: 0.86rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.goal-btn-detail {
+  font-size: 0.68rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.reel-commentary-footer {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.commentary-speech-bubble {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(47, 104, 255, 0.08);
+  border: 1px solid rgba(47, 104, 255, 0.2);
+  padding: 10px 14px;
+  border-radius: 12px;
+  margin-bottom: 12px;
+}
+
+.commentary-text {
+  font-size: 0.8rem;
+  color: #e2e8f0;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.reel-stat-chips-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+@media (max-width: 640px) {
+  .reel-stat-chips-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.stat-chip-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  text-align: center;
+}
+
+.stat-chip-label {
+  font-size: 0.66rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.stat-chip-val {
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+/* ==========================================================================
+   REAL SPORTS NEWS WIRE (ESPN 100% LIVE FEED)
+   ========================================================================== */
+.real-sports-news-container {
+  background: rgba(18, 22, 32, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+  padding: 20px;
+  margin-bottom: 24px;
+  backdrop-filter: blur(12px);
+}
+
+.news-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.news-header-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.news-main-heading {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+}
+
+.news-sub-heading {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+.news-live-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #34d399;
+  font-size: 0.68rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: 9999px;
+}
+
+.news-category-pills-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+  scrollbar-width: none;
+}
+
+.news-category-pills-row::-webkit-scrollbar {
+  display: none;
+}
+
+.news-pill-btn {
+  padding: 7px 14px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.news-pill-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: #ffffff;
+}
+
+.news-pill-btn.active {
+  background: linear-gradient(135deg, #1d4ed8, #2563eb);
+  color: #ffffff;
+  border-color: #60a5fa;
+  box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35);
+}
+
+.news-articles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.news-article-card {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.news-article-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(96, 165, 250, 0.4);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.4);
+}
+
+.news-thumbnail-wrapper {
+  position: relative;
+  width: 100%;
+  height: 150px;
+  overflow: hidden;
+  background: #000;
+}
+
+.news-thumbnail-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.4s ease;
+}
+
+.news-article-card:hover .news-thumbnail-img {
+  transform: scale(1.05);
+}
+
+.news-category-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(13, 17, 24, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #60a5fa;
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 9999px;
+  backdrop-filter: blur(8px);
+}
+
+.news-content-box {
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.news-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.news-time-ago {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #94a3b8;
+}
+
+.news-card-headline {
+  font-size: 0.92rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.4;
+  margin: 0 0 8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.news-card-description {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin: 0 0 12px;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  flex: 1;
+}
+
+.news-read-more-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: #3b82f6;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-top: auto;
+}
+
+/* News Article Modal */
+.news-modal-card {
+  background: #111520;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 24px;
+  max-width: 580px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8);
+  animation: modal-pop 0.25s ease-out;
+}
+
+.news-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.news-modal-hero-img {
+  width: 100%;
+  max-height: 250px;
+  object-fit: cover;
+}
+
+.news-modal-body {
+  padding: 20px;
+}
+
+.news-modal-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.35;
+  margin: 0 0 14px;
+}
+
+.news-modal-text {
+  font-size: 0.9rem;
+  color: #cbd5e1;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.news-modal-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.news-modal-external-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #2563eb;
+  color: #ffffff;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.news-modal-external-btn:hover {
+  background: #1d4ed8;
+}
+
+.news-modal-close-action {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ==========================================================================
+   INTERACTIVE SPORTS PULSE & COMMUNITY POLL
+   ========================================================================== */
+.sports-pulse-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.pulse-tactical-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.pulse-card {
+  background: rgba(18, 22, 32, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 18px;
+  padding: 16px 18px;
+  backdrop-filter: blur(10px);
+}
+
+.pulse-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.pulse-icon-box {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pulse-card-title {
+  font-size: 0.94rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+}
+
+.pulse-card-sub {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.momentum-meter-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.momentum-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #e2e8f0;
+}
+
+.momentum-track {
+  width: 100%;
+  height: 10px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 9999px;
+  display: flex;
+  overflow: hidden;
+}
+
+.momentum-bar-home {
+  background: linear-gradient(90deg, #2563eb, #60a5fa);
+  height: 100%;
+}
+
+.momentum-bar-away {
+  background: linear-gradient(90deg, #f97316, #ef4444);
+  height: 100%;
+}
+
+.momentum-caption {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  line-height: 1.4;
+  margin: 0;
+}
+
+.sharp-flow-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.sharp-stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.sharp-stat-label {
+  color: var(--text-secondary);
+}
+
+.sharp-stat-val {
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.pulse-poll-card {
+  background: linear-gradient(145deg, rgba(245, 158, 11, 0.08), rgba(18, 22, 32, 0.8));
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  border-radius: 20px;
+  padding: 18px 20px;
+}
+
+.poll-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.poll-badge {
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #f59e0b;
+  letter-spacing: 0.4px;
+}
+
+.poll-count-text {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.poll-question-text {
+  font-size: 1.05rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0 0 14px;
+  line-height: 1.4;
+}
+
+.poll-options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.poll-option-btn {
+  position: relative;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+  overflow: hidden;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.poll-option-btn:hover:not(:disabled) {
+  border-color: rgba(245, 158, 11, 0.5);
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.poll-option-btn.selected {
+  border-color: #10b981;
+}
+
+.poll-option-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  background: rgba(59, 130, 246, 0.18);
+  transition: width 0.5s ease;
+  pointer-events: none;
+}
+
+.poll-option-btn.selected .poll-option-fill {
+  background: rgba(16, 185, 129, 0.22);
+}
+
+.poll-option-content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.poll-option-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.poll-circle-radio {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.poll-option-label {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.poll-option-pct {
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: #60a5fa;
+}
+
+.poll-thankyou-message {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 0.75rem;
+  color: #34d399;
+  font-weight: 700;
+}
+
+.pulse-lineup-card {
+  background: rgba(18, 22, 32, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 20px;
+  padding: 18px 20px;
+}
+
+.lineup-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.lineup-title {
+  font-size: 0.98rem;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 0;
+}
+
+.lineup-players-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.player-form-item {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 12px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.player-form-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.player-form-name {
+  font-size: 0.85rem;
+  font-weight: 800;
+  color: #ffffff;
+}
+
+.player-form-rating {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #f59e0b;
+}
+
+.player-form-team {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+}
+
+.player-form-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.player-form-stat {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #34d399;
+}
+
+.player-status-tag {
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: #60a5fa;
+  background: rgba(59, 130, 246, 0.12);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
 
 

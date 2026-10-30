@@ -4,6 +4,9 @@ import confetti from 'canvas-confetti';
 import { TeamLogo, UefaChampionsLeagueIcon, PremierLeagueIcon, LaLigaIcon } from './TeamLogos';
 import { FEATURED_MATCHES, FEATURED_MATCH, LEAGUES_DATA, LEAGUE_MATCHES, OTHER_SPORTS_MATCHES, SPORTS_CATEGORIES, LEAGUES_LIST } from '../data/mockData';
 import { fetchLiveOddsFromProvider } from '../services/oddsApi';
+import { InteractiveGoalReel } from './InteractiveGoalReel';
+import { RealSportsNews } from './RealSportsNews';
+import { InteractiveSportsPulse } from './InteractiveSportsPulse';
 
 export const DesktopSportsbookView = ({
   userBalance,
@@ -385,10 +388,22 @@ export const DesktopSportsbookView = ({
               return (
                 <div
                   className="featured-match-card"
-                  style={{ padding: '24px', position: 'relative' }}
+                  style={{ padding: '24px', position: 'relative', overflow: 'hidden' }}
                   onMouseEnter={() => setIsHeroPaused(true)}
                   onMouseLeave={() => setIsHeroPaused(false)}
                 >
+                  {/* Ambient Real Pitch Video Background */}
+                  <div style={{ position: 'absolute', inset: 0, borderRadius: '24px', overflow: 'hidden', zIndex: 0, pointerEvents: 'none' }}>
+                    <video
+                      src="https://upload.wikimedia.org/wikipedia/commons/6/69/Goal_by_Rafael_Leao.webm"
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.18, filter: 'blur(1px)' }}
+                    />
+                    <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(17,20,28,0.76) 0%, rgba(13,15,21,0.95) 100%)' }} />
+                  </div>
                   {/* Prev / Next Carousel Controls */}
                   <button
                     type="button"
@@ -667,6 +682,15 @@ export const DesktopSportsbookView = ({
                 </div>
               );
             })()}
+
+            {/* Interactive Goal Cam & Real Match Scoring Video Arena */}
+            <InteractiveGoalReel onBetOnMatch={onOpenMatchDetails} />
+
+            {/* Interactive Sports Pulse & Live Community Poll */}
+            <InteractiveSportsPulse />
+
+            {/* Real Live Sports Breaking News Wire (Free ESPN Live Feed) */}
+            <RealSportsNews />
 
             {/* League Quick-Filter Pills */}
             <div style={{ marginTop: '10px' }}>
