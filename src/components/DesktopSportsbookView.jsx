@@ -4,6 +4,7 @@ import confetti from 'canvas-confetti';
 import { TeamLogo, UefaChampionsLeagueIcon, PremierLeagueIcon, LaLigaIcon } from './TeamLogos';
 import { FEATURED_MATCHES, FEATURED_MATCH, LEAGUES_DATA, LEAGUE_MATCHES, OTHER_SPORTS_MATCHES, SPORTS_CATEGORIES, LEAGUES_LIST } from '../data/mockData';
 import { fetchLiveOddsFromProvider } from '../services/oddsApi';
+import { scrapeAllLiveLeagueMatches } from '../services/liveOddsAggregator';
 import { InteractiveGoalReel } from './InteractiveGoalReel';
 import { RealSportsNews } from './RealSportsNews';
 import { InteractiveSportsPulse } from './InteractiveSportsPulse';
@@ -34,7 +35,32 @@ export const DesktopSportsbookView = ({
   const [stake, setStake] = useState(25);
   const [desktopNavTab, setDesktopNavTab] = useState('sportsbook'); // 'sportsbook', 'live', 'ucl', 'promos'
   const [liveMatches, setLiveMatches] = useState([]);
+  const [scrapedLeagues, setScrapedLeagues] = useState(LEAGUES_DATA);
+  const [scrapedHeroes, setScrapedHeroes] = useState(FEATURED_MATCHES);
+  const [scrapedBasketball, setScrapedBasketball] = useState(OTHER_SPORTS_MATCHES.basketball);
+  const [scrapedTennis, setScrapedTennis] = useState(OTHER_SPORTS_MATCHES.tennis);
   const [isLoadingLive, setIsLoadingLive] = useState(false);
+
+  // Scrape Real Live Leagues & Odds
+  useEffect(() => {
+    let isMounted = true;
+    scrapeAllLiveLeagueMatches((bgData) => {
+      if (isMounted && bgData) {
+        if (bgData.leagues?.length > 0) setScrapedLeagues(bgData.leagues);
+        if (bgData.heroes?.length > 0) setScrapedHeroes(bgData.heroes);
+        if (bgData.basketball?.length > 0) setScrapedBasketball(bgData.basketball);
+        if (bgData.tennis?.length > 0) setScrapedTennis(bgData.tennis);
+      }
+    }).then(res => {
+      if (isMounted && res?.data) {
+        if (res.data.leagues?.length > 0) setScrapedLeagues(res.data.leagues);
+        if (res.data.heroes?.length > 0) setScrapedHeroes(res.data.heroes);
+        if (res.data.basketball?.length > 0) setScrapedBasketball(res.data.basketball);
+        if (res.data.tennis?.length > 0) setScrapedTennis(res.data.tennis);
+      }
+    }).catch(() => {});
+    return () => { isMounted = false; };
+  }, []);
 
   // 5-Second Auto-Slide Hero Carousel State
   const [heroIndex, setHeroIndex] = useState(0);
@@ -45,25 +71,28 @@ export const DesktopSportsbookView = ({
     if (isHeroPaused) return;
     const intervalMs = 100;
     const totalMs = 5000;
+    const poolLength = scrapedHeroes?.length > 0 ? scrapedHeroes.length : FEATURED_MATCHES.length;
     const timer = setInterval(() => {
       setSlideProgress(prev => {
         if (prev >= 100) {
-          setHeroIndex(idx => (idx + 1) % FEATURED_MATCHES.length);
+          setHeroIndex(idx => (idx + 1) % poolLength);
           return 0;
         }
         return prev + (intervalMs / totalMs) * 100;
       });
     }, intervalMs);
     return () => clearInterval(timer);
-  }, [isHeroPaused]);
+  }, [isHeroPaused, scrapedHeroes.length]);
 
   const handleNextHero = () => {
-    setHeroIndex(prev => (prev + 1) % FEATURED_MATCHES.length);
+    const total = scrapedHeroes?.length > 0 ? scrapedHeroes.length : FEATURED_MATCHES.length;
+    setHeroIndex(prev => (prev + 1) % total);
     setSlideProgress(0);
   };
 
   const handlePrevHero = () => {
-    setHeroIndex(prev => (prev - 1 + FEATURED_MATCHES.length) % FEATURED_MATCHES.length);
+    const total = scrapedHeroes?.length > 0 ? scrapedHeroes.length : FEATURED_MATCHES.length;
+    setHeroIndex(prev => (prev - 1 + total) % total);
     setSlideProgress(0);
   };
 
@@ -384,7 +413,8 @@ export const DesktopSportsbookView = ({
             <div key="football-arena" className="screen-transition-enter" style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {/* Featured Live Match Hero Slider (Slides every 5 seconds) */}
             {(() => {
-              const currentHero = FEATURED_MATCHES[heroIndex] || FEATURED_MATCHES[0];
+              const heroPool = scrapedHeroes?.length > 0 ? scrapedHeroes : FEATURED_MATCHES;
+              const currentHero = heroPool[heroIndex % heroPool.length] || heroPool[0];
               return (
                 <div
                   className="featured-match-card"
@@ -708,16 +738,22 @@ export const DesktopSportsbookView = ({
                   className={`league-pill-btn ${selectedLeagueFilter === 'all' ? 'active' : ''}`}
                   onClick={() => setSelectedLeagueFilter('all')}
                 >
-                  <span>⚡</span> All Leagues ({LEAGUE_MATCHES.length})
+                  <span>⚡</span> All Leagues ({
+                    (scrapedLeagues?.length > 0 ? scrapedLeagues : LEAGUES_DATA)
+                      .filter(l => l.id !== 'nba' && l.id !== 'tennis')
+                      .reduce((sum, l) => sum + (l.matches?.length || 0), 0)
+                  })
                 </button>
-                {LEAGUES_DATA.map(league => (
+                {(scrapedLeagues?.length > 0 ? scrapedLeagues : LEAGUES_DATA)
+                  .filter(l => l.id !== 'nba' && l.id !== 'tennis')
+                  .map(league => (
                   <button
                     key={league.id}
                     type="button"
                     className={`league-pill-btn ${selectedLeagueFilter === league.id ? 'active' : ''}`}
                     onClick={() => setSelectedLeagueFilter(league.id)}
                   >
-                    <span>{league.flag}</span> {league.name} ({league.matches.length})
+                    <span>{league.flag}</span> {league.name} ({league.matches?.length || 0})
                   </button>
                 ))}
               </div>
@@ -726,8 +762,8 @@ export const DesktopSportsbookView = ({
             {/* League-Categorized Fixtures (Champions League under UCL, EPL under EPL, La Liga under La Liga, etc.) */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               {(selectedLeagueFilter === 'all'
-                ? LEAGUES_DATA
-                : LEAGUES_DATA.filter(l => l.id === selectedLeagueFilter)
+                ? (scrapedLeagues?.length > 0 ? scrapedLeagues : LEAGUES_DATA).filter(l => l.id !== 'nba' && l.id !== 'tennis')
+                : (scrapedLeagues?.length > 0 ? scrapedLeagues : LEAGUES_DATA).filter(l => l.id === selectedLeagueFilter)
               ).map(league => (
                 <div key={league.id} className="league-section-card">
                   {/* League Header */}
@@ -910,10 +946,10 @@ export const DesktopSportsbookView = ({
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '1.2rem' }}>🏀</span>
                     <h3 style={{ fontSize: '1.05rem', fontWeight: '800' }}>Live NBA Fixtures</h3>
-                    {liveMatches.length > 0 && (
+                    {liveMatches.filter(m => m.sport === 'basketball').length > 0 && (
                       <span className="live-pill-badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', borderColor: 'rgba(16, 185, 129, 0.4)' }}>
                         <span className="live-pulse-dot" style={{ background: '#10b981' }} />
-                        ODDS API LIVE ({liveMatches.length} GAMES)
+                        ODDS API LIVE ({liveMatches.filter(m => m.sport === 'basketball').length} GAMES)
                       </span>
                     )}
                   </div>
@@ -923,7 +959,7 @@ export const DesktopSportsbookView = ({
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {(liveMatches.length > 0 ? liveMatches : OTHER_SPORTS_MATCHES.basketball).map(match => (
+                  {(liveMatches.filter(m => m.sport === 'basketball').length > 0 ? liveMatches.filter(m => m.sport === 'basketball') : (scrapedBasketball?.length > 0 ? scrapedBasketball : OTHER_SPORTS_MATCHES.basketball)).map(match => (
                     <div key={match.id} className="desktop-match-item">
                       <div className="desktop-team-chip" title={match.homeTeam.name}>
                         <TeamLogo team={match.homeTeam.name} size={30} />
@@ -1057,17 +1093,17 @@ export const DesktopSportsbookView = ({
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span style={{ fontSize: '1.2rem' }}>🎾</span>
                     <h3 style={{ fontSize: '1.05rem', fontWeight: '800' }}>ATP / WTA Tour Fixtures</h3>
-                    {liveMatches.length > 0 && (
+                    {liveMatches.filter(m => m.sport === 'tennis').length > 0 && (
                       <span className="live-pill-badge" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', borderColor: 'rgba(16, 185, 129, 0.4)' }}>
                         <span className="live-pulse-dot" style={{ background: '#10b981' }} />
-                        ODDS API LIVE ({liveMatches.length} MATCHES)
+                        ODDS API LIVE ({liveMatches.filter(m => m.sport === 'tennis').length} MATCHES)
                       </span>
                     )}
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {(liveMatches.length > 0 ? liveMatches : OTHER_SPORTS_MATCHES.tennis).map(match => (
+                  {(liveMatches.filter(m => m.sport === 'tennis').length > 0 ? liveMatches.filter(m => m.sport === 'tennis') : (scrapedTennis?.length > 0 ? scrapedTennis : OTHER_SPORTS_MATCHES.tennis)).map(match => (
                     <div key={match.id} className="desktop-match-item">
                       <div className="desktop-team-chip" title={match.homeTeam.name}>
                         <TeamLogo team={match.homeTeam.name} size={30} />

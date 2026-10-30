@@ -3,6 +3,7 @@ import { Search, Bell, BarChart2, Star, ChevronDown, ChevronUp, Home, Disc, Tick
 import { TeamLogo, UefaChampionsLeagueIcon } from './TeamLogos';
 import { SPORTS_CATEGORIES, FEATURED_MATCHES, FEATURED_MATCH, LEAGUES_DATA, LEAGUE_MATCHES, OTHER_SPORTS_MATCHES } from '../data/mockData';
 import { fetchLiveOddsFromProvider } from '../services/oddsApi';
+import { scrapeAllLiveLeagueMatches } from '../services/liveOddsAggregator';
 import { InteractiveGoalReel } from './InteractiveGoalReel';
 import { RealSportsNews } from './RealSportsNews';
 import { InteractiveSportsPulse } from './InteractiveSportsPulse';
@@ -27,16 +28,42 @@ export const HomeScreen = ({
   const [favorites, setFavorites] = useState({ 'featured-1': false });
   const [sliderIndex, setSliderIndex] = useState(0);
   const [liveMatches, setLiveMatches] = useState([]);
+  const [scrapedLeagues, setScrapedLeagues] = useState(LEAGUES_DATA);
+  const [scrapedHeroes, setScrapedHeroes] = useState(FEATURED_MATCHES);
+  const [scrapedBasketball, setScrapedBasketball] = useState(OTHER_SPORTS_MATCHES.basketball);
+  const [scrapedTennis, setScrapedTennis] = useState(OTHER_SPORTS_MATCHES.tennis);
   const [activeMobileLeague, setActiveMobileLeague] = useState('all');
 
-  // 5-Second Auto-Slide Timer for Hero Carousel
+  // 1. Scrape All Real Live Leagues & Odds
   useEffect(() => {
-    const timer = setInterval(() => {
-      setSliderIndex(prev => (prev + 1) % FEATURED_MATCHES.length);
-    }, 5000);
-    return () => clearInterval(timer);
+    let isMounted = true;
+    scrapeAllLiveLeagueMatches((bgData) => {
+      if (isMounted && bgData) {
+        if (bgData.leagues?.length > 0) setScrapedLeagues(bgData.leagues);
+        if (bgData.heroes?.length > 0) setScrapedHeroes(bgData.heroes);
+        if (bgData.basketball?.length > 0) setScrapedBasketball(bgData.basketball);
+        if (bgData.tennis?.length > 0) setScrapedTennis(bgData.tennis);
+      }
+    }).then(res => {
+      if (isMounted && res?.data) {
+        if (res.data.leagues?.length > 0) setScrapedLeagues(res.data.leagues);
+        if (res.data.heroes?.length > 0) setScrapedHeroes(res.data.heroes);
+        if (res.data.basketball?.length > 0) setScrapedBasketball(res.data.basketball);
+        if (res.data.tennis?.length > 0) setScrapedTennis(res.data.tennis);
+      }
+    }).catch(() => {});
+    return () => { isMounted = false; };
   }, []);
 
+  // 2. 5-Second Auto-Slide Timer for Hero Carousel
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setSliderIndex(prev => (prev + 1) % (scrapedHeroes.length || FEATURED_MATCHES.length));
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [scrapedHeroes.length]);
+
+  // 3. Live Odds Feed per sport
   useEffect(() => {
     let isMounted = true;
     fetchLiveOddsFromProvider(selectedSport, (bgRes) => {
@@ -141,7 +168,7 @@ export const HomeScreen = ({
         <>
           {/* Featured Live Match Carousel (Slides every 5 seconds) */}
           {(() => {
-            const activeHero = FEATURED_MATCHES[sliderIndex] || FEATURED_MATCHES[0];
+            const activeHero = scrapedHeroes[sliderIndex] || scrapedHeroes[0] || FEATURED_MATCHES[0];
             return (
               <div
                 className="featured-match-card"
@@ -242,7 +269,7 @@ export const HomeScreen = ({
 
                 {/* Carousel Slider Dash Indicators (5-second auto slide) */}
                 <div className="featured-carousel-slider-dots">
-                  {FEATURED_MATCHES.map((m, idx) => (
+                  {scrapedHeroes.map((m, idx) => (
                     <div
                       key={m.id}
                       className={`slider-dash ${sliderIndex === idx ? 'active' : ''}`}
@@ -268,7 +295,9 @@ export const HomeScreen = ({
               <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Verified Odds</span>
             </div>
 
-            {LEAGUES_DATA.map(league => (
+            {(scrapedLeagues?.length > 0 ? scrapedLeagues : LEAGUES_DATA)
+              .filter(l => l.id !== 'nba' && l.id !== 'tennis')
+              .map(league => (
               <div key={league.id} className="league-accordion-section">
                 <div className="league-section-header">
                   <div className="league-header-left">
@@ -376,14 +405,21 @@ export const HomeScreen = ({
       {/* ========================================================= */}
       {/* 2. BASKETBALL VIEW                                        */}
       {/* ========================================================= */}
-      {selectedSport === 'basketball' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 4px' }}>
-            <span style={{ fontWeight: '800', fontSize: '0.95rem' }}>🏀 NBA Live Fixtures</span>
-            <span className="count-badge-bubble">{(liveMatches.length > 0 ? liveMatches : OTHER_SPORTS_MATCHES.basketball).length}</span>
-          </div>
+      {selectedSport === 'basketball' && (() => {
+        const basketballMatches = liveMatches.filter(m => m.sport === 'basketball').length > 0
+          ? liveMatches.filter(m => m.sport === 'basketball')
+          : (scrapedBasketball?.length > 0 ? scrapedBasketball : OTHER_SPORTS_MATCHES.basketball);
 
-          {(liveMatches.length > 0 ? liveMatches : OTHER_SPORTS_MATCHES.basketball).map(match => {
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 4px' }}>
+              <span style={{ fontWeight: '800', fontSize: '0.95rem' }}>🏀 NBA Live Fixtures</span>
+              <span className="count-badge-bubble">
+                {basketballMatches.length}
+              </span>
+            </div>
+
+            {basketballMatches.map(match => {
             const homeSelected = isOddSelected(match.id, '1');
             const awaySelected = isOddSelected(match.id, '2');
 
@@ -441,20 +477,28 @@ export const HomeScreen = ({
               </div>
             );
           })}
-        </div>
-      )}
+          </div>
+        );
+      })()}
 
       {/* ========================================================= */}
       {/* 3. TENNIS VIEW                                            */}
       {/* ========================================================= */}
-      {selectedSport === 'tennis' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 4px' }}>
-            <span style={{ fontWeight: '800', fontSize: '0.95rem' }}>🎾 ATP Masters 1000</span>
-            <span className="count-badge-bubble">{(liveMatches.length > 0 ? liveMatches : OTHER_SPORTS_MATCHES.tennis).length}</span>
-          </div>
+      {selectedSport === 'tennis' && (() => {
+        const tennisMatches = liveMatches.filter(m => m.sport === 'tennis').length > 0
+          ? liveMatches.filter(m => m.sport === 'tennis')
+          : (scrapedTennis?.length > 0 ? scrapedTennis : OTHER_SPORTS_MATCHES.tennis);
 
-          {(liveMatches.length > 0 ? liveMatches : OTHER_SPORTS_MATCHES.tennis).map(match => {
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '6px 4px' }}>
+              <span style={{ fontWeight: '800', fontSize: '0.95rem' }}>🎾 ATP Masters 1000</span>
+              <span className="count-badge-bubble">
+                {tennisMatches.length}
+              </span>
+            </div>
+
+            {tennisMatches.map(match => {
             const homeSelected = isOddSelected(match.id, '1');
             const awaySelected = isOddSelected(match.id, '2');
 
@@ -512,8 +556,9 @@ export const HomeScreen = ({
               </div>
             );
           })}
-        </div>
-      )}
+          </div>
+        );
+      })()}
 
       {/* Interactive Sports Pulse & Live Community Poll */}
       <InteractiveSportsPulse />
